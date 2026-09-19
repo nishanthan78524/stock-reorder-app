@@ -51,3 +51,9 @@ No. | Product | Quantity | Barcode
 
 On supported phones, the browser share sheet can send the PDF directly to WhatsApp.
 If direct file sharing is unavailable, the PDF is downloaded and WhatsApp opens with a message; attach the downloaded PDF manually.
+
+
+### Version 3 update
+The Reorder List now uses a prominent red trash-can delete icon instead of a text Remove button.
+
+If GitHub Pages appears to show the previous version, hard-refresh the page (Ctrl+F5 on Windows) or open it in a private/incognito window.

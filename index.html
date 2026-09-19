@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta name="theme-color" content="#0f172a">
 <title>Stock Reorder App</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=3">
 <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
@@ -40,9 +40,15 @@
 <p id="settingsStatus" class="status"></p>
 </section>
 
+<section class="card">
+<h2>Product Database</h2>
+<p class="small">Sample products are included for testing. Edit <code>products.js</code> later for your products.</p>
+<input id="searchProduct" type="search" placeholder="Search product or barcode">
+<div id="productResults"></div>
+</section>
 </main>
 <footer>Stock Reorder App — GitHub Pages test version</footer>
 <script src="products.js"></script>
-<script src="app.js"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>
