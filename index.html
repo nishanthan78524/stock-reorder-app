@@ -1,113 +1,52 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#172033">
-<title>Stock Reorder</title>
-<style>
-*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:#f5f7fb;color:#172033}
-button,input{font:inherit}button{cursor:pointer}.app{max-width:760px;margin:auto;min-height:100vh;background:#f5f7fb}
-header{background:#fff;padding:18px 18px 12px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center}
-h1{font-size:25px;margin:0}.sub{color:#6b7280;font-size:13px;margin-top:3px}.badge{background:#172033;color:#fff;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:800}
-main{padding:16px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:16px;margin-bottom:14px}
-h2{font-size:19px;margin:0 0 7px}.help{color:#6b7280;line-height:1.45;font-size:14px}.primary,.whatsapp{width:100%;border:0;border-radius:12px;min-height:50px;color:#fff;font-weight:800;margin-top:15px}.primary{background:#172033}.whatsapp{background:#167c42}
-.camera{width:100%;aspect-ratio:4/3;background:#101827;border-radius:14px;overflow:hidden;position:relative;margin-top:15px}.camera video{width:100%;height:100%;object-fit:cover}.frame{position:absolute;left:15%;right:15%;top:32%;height:34%;border:2px solid white;border-radius:12px}
-.row{display:flex;gap:8px;margin-top:12px}.input{flex:1;border:1px solid #d1d5db;border-radius:10px;min-height:48px;padding:0 12px;background:#fff}.small{border:0;background:#172033;color:#fff;border-radius:10px;padding:0 18px;font-weight:800}
-.item{display:flex;align-items:center;gap:10px;padding:13px 0;border-bottom:1px solid #edf0f4}.info{flex:1;min-width:0}.name{font-weight:750}.meta{font-size:12px;color:#6b7280;margin-top:4px}.qty{display:flex;align-items:center;gap:7px}.qbtn{border:0;background:#eef1f5;border-radius:50%;width:36px;height:36px;font-weight:800;font-size:20px}.qnum{min-width:20px;text-align:center;font-weight:800}
-nav{position:sticky;bottom:0;background:#fff;border-top:1px solid #e5e7eb;display:flex;padding:7px 0 calc(7px + env(safe-area-inset-bottom))}nav button{flex:1;border:0;background:transparent;padding:10px;color:#6b7280;font-weight:750}.active{color:#172033!important}.danger{float:right;color:#b42318;border:0;background:transparent;font-weight:700}.success{color:#167c42;font-weight:700;margin-top:12px}.empty{text-align:center;color:#6b7280;padding:28px 0}.label{display:block;font-weight:700;margin-top:16px;margin-bottom:7px}
-#scannerStatus{margin-top:10px;color:#6b7280;font-size:13px}
-@media(min-width:760px){body{padding:20px}.app{border-radius:20px;overflow:hidden;box-shadow:0 10px 40px #00000012;min-height:calc(100vh - 40px)}}
-</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#0f172a">
+<title>Stock Reorder App</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
 </head>
 <body>
-<div class="app">
-<header><div><h1>Stock Reorder</h1><div class="sub">Convenience Store Staff App</div></div><div class="badge" id="count">0</div></header>
-<main id="main"></main>
-<nav>
-<button data-tab="scan" class="active">Scan</button>
-<button data-tab="list">List <span id="listCount"></span></button>
-<button data-tab="settings">Settings</button>
-</nav>
-</div>
-<script>
-const products=[
-{barcode:"5012345678901",name:"Coca-Cola Original Taste 500ml",category:"Soft Drinks",supplier:"Booker",pack:"12 x 500ml"},
-{barcode:"5012345678902",name:"Pepsi 500ml",category:"Soft Drinks",supplier:"Booker",pack:"24 x 500ml"},
-{barcode:"5012345678903",name:"Monster Energy Original 500ml",category:"Energy Drinks",supplier:"Booker",pack:"12 x 500ml"},
-{barcode:"5012345678904",name:"Walkers Ready Salted Crisps 65g",category:"Crisps",supplier:"Booker",pack:"32 x 65g"},
-{barcode:"5012345678905",name:"Cadbury Dairy Milk 110g",category:"Chocolate",supplier:"Booker",pack:"14 x 110g"},
-{barcode:"5012345678906",name:"Buldak Original 140g",category:"Noodles",supplier:"Wholesale",pack:"40 x 140g"}
-];
-let items=[],tab="scan",stream=null,detector=null;
-const main=document.getElementById("main"),count=document.getElementById("count"),listCount=document.getElementById("listCount");
-const find=b=>products.find(p=>p.barcode===b);
+<header><h1>Stock Reorder</h1><p>Scan products and send your reorder list</p></header>
+<main>
+<section class="card">
+<h2>Scan Product</h2>
+<div class="scanner"><video id="video" playsinline muted></video><div id="scanLine"></div></div>
+<div class="actions"><button id="startCamera" class="primary">📷 Start Camera</button><button id="stopCamera" class="secondary" disabled>Stop Camera</button></div>
+<p id="cameraStatus" class="status">Camera is stopped.</p>
+<div class="divider">OR</div>
+<label for="barcodeInput">Enter barcode manually</label>
+<div class="manual"><input id="barcodeInput" inputmode="numeric" placeholder="e.g. 5012345678901"><button id="addBarcode" class="primary">Add</button></div>
+<p id="message" class="message"></p>
+</section>
 
-function render(){
-count.textContent=items.reduce((a,x)=>a+x.quantity,0);listCount.textContent=items.length?` (${items.length})`:"";
-document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
-if(tab==="scan")renderScan(); else if(tab==="list")renderList(); else renderSettings();
-}
-function renderScan(){
-main.innerHTML=`<section class="card"><h2>Scan products</h2><div class="help">Scan each product that needs reordering. Repeated scans increase the quantity.</div>
-<div id="cameraArea"></div><div id="scannerStatus"></div></section>
-<section class="card"><h2>Test without camera</h2><div class="help">Enter one of the sample barcodes while testing.</div>
-<div class="row"><input class="input" id="manual" inputmode="numeric" placeholder="5012345678901"><button class="small" id="add">Add</button></div></section>`;
-const area=document.getElementById("cameraArea");
-if("BarcodeDetector" in window){
-area.innerHTML=`<button class="primary" id="start">Scan Barcode</button>`;
-document.getElementById("start").onclick=startCamera;
-}else{
-area.innerHTML=`<button class="primary" disabled>Camera barcode scanning not supported by this browser</button>`;
-}
-document.getElementById("add").onclick=()=>{addBarcode(document.getElementById("manual").value);document.getElementById("manual").value=""};
-}
-function renderList(){
-main.innerHTML=`<section class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div><h2>Reorder List</h2><div class="help">${items.length} products / ${items.reduce((a,x)=>a+x.quantity,0)} units</div></div>${items.length?'<button class="danger" id="clear">Clear</button>':''}</div><div id="items"></div><button class="whatsapp" id="send">Send via WhatsApp</button></section>`;
-const box=document.getElementById("items");
-if(!items.length){box.innerHTML='<div class="empty">No products scanned yet.</div>'}else items.forEach(x=>{
-const d=document.createElement("div");d.className="item";d.innerHTML=`<div class="info"><div class="name">${x.name}</div><div class="meta">${x.barcode} • ${x.pack}</div></div><div class="qty"><button class="qbtn" data-b="${x.barcode}" data-d="-1">−</button><span class="qnum">${x.quantity}</span><button class="qbtn" data-b="${x.barcode}" data-d="1">+</button></div>`;box.appendChild(d);
-});
-document.querySelectorAll(".qbtn").forEach(b=>b.onclick=()=>changeQty(b.dataset.b,+b.dataset.d));
-if(items.length)document.getElementById("clear").onclick=()=>{if(confirm("Clear reorder list?")){items=[];render()}};
-document.getElementById("send").onclick=sendWhatsApp;
-}
-function renderSettings(){
-const saved=localStorage.getItem("waNumber")||"";
-main.innerHTML=`<section class="card"><h2>Settings</h2><label class="label">WhatsApp destination number</label><input class="input" style="width:100%" id="wa" inputmode="tel" placeholder="+44 7700 900123" value="${saved}"><div class="help" style="margin-top:7px">Enter the number in international format. It is saved only on this device.</div>
-<label class="label">Product database</label><div class="help">Prototype contains ${products.length} sample products. The production version can connect this screen to your live shop database.</div></section>`;
-document.getElementById("wa").oninput=e=>localStorage.setItem("waNumber",e.target.value);
-}
-function addBarcode(barcode){
-barcode=String(barcode).trim();if(!barcode)return;
-const p=find(barcode);if(!p){alert("Product not found in the prototype database.");return}
-const old=items.find(x=>x.barcode===barcode);if(old)old.quantity++;else items.push({...p,quantity:1});render();
-}
-function changeQty(barcode,delta){const x=items.find(i=>i.barcode===barcode);if(x)x.quantity+=delta;items=items.filter(i=>i.quantity>0);render()}
-async function startCamera(){
-if(!navigator.mediaDevices?.getUserMedia){alert("Camera access is not available in this browser.");return}
-try{
-stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}}});
-detector=new BarcodeDetector({formats:["ean_13","ean_8","upc_a","upc_e","code_128","code_39"]});
-const area=document.getElementById("cameraArea");area.innerHTML=`<div class="camera"><video id="video" autoplay playsinline muted></video><div class="frame"></div></div><button class="primary" id="stop">Stop Scanning</button>`;
-document.getElementById("video").srcObject=stream;document.getElementById("stop").onclick=stopCamera;scanLoop();
-}catch(e){alert("Camera permission was not granted or is unavailable.");}
-}
-async function scanLoop(){
-if(!stream||!detector)return;const video=document.getElementById("video");if(!video)return;
-try{const codes=await detector.detect(video);if(codes.length){addBarcode(codes[0].rawValue);stopCamera();return}}catch(e){}
-requestAnimationFrame(scanLoop);
-}
-function stopCamera(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}detector=null;render()}
-function sendWhatsApp(){
-if(!items.length){alert("The reorder list is empty.");return}
-const phone=(localStorage.getItem("waNumber")||"").replace(/\D/g,"");if(!phone){alert("Enter the WhatsApp number in Settings first.");return}
-let msg="Stock Reorder List\\nDate: "+new Date().toLocaleString("en-GB")+"\\n\\n";
-msg+=items.map((x,i)=>`${i+1}. ${x.name} | Qty: ${x.quantity} | Barcode: ${x.barcode}`).join("\\n");
-window.location.href=`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
-}
-document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{stopCamera();tab=b.dataset.tab;render()});
-render();
-</script>
+<section class="card">
+<div class="title"><h2>Reorder List</h2><span id="itemCount" class="badge">0</span></div>
+<div id="emptyState" class="empty">No products added yet.</div>
+<div id="reorderList"></div>
+<div class="actions"><button id="clearList" class="danger">Clear List</button><button id="sendWhatsApp" class="whatsapp">Send via WhatsApp</button></div>
+</section>
+
+<section class="card">
+<h2>Settings</h2>
+<label for="whatsappNumber">WhatsApp destination number</label>
+<input id="whatsappNumber" inputmode="tel" placeholder="447700900123">
+<small>Use international format without + or spaces.</small>
+<button id="saveSettings" class="primary full">Save Settings</button>
+<p id="settingsStatus" class="status"></p>
+</section>
+
+<section class="card">
+<h2>Product Database</h2>
+<p class="small">Sample products are included for testing. Edit <code>products.js</code> later for your products.</p>
+<input id="searchProduct" type="search" placeholder="Search product or barcode">
+<div id="productResults"></div>
+</section>
+</main>
+<footer>Stock Reorder App — GitHub Pages test version</footer>
+<script src="products.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
