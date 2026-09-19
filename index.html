@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta name="theme-color" content="#0f172a">
 <title>Stock Reorder App</title>
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
@@ -17,7 +17,7 @@
 <h2>Scan Product</h2>
 <div class="scanner"><video id="video" playsinline muted></video><div id="scanLine"></div></div>
 <div class="actions"><button id="startCamera" class="primary">📷 Start Camera</button><button id="stopCamera" class="secondary" disabled>Stop Camera</button></div>
-<p id="cameraStatus" class="status">Camera is stopped.</p>
+<p id="cameraStatus" class="status">Camera is stopped. Start it once to scan multiple products continuously.</p>
 <div class="divider">OR</div>
 <label for="barcodeInput">Enter barcode manually</label>
 <div class="manual"><input id="barcodeInput" inputmode="numeric" placeholder="e.g. 5012345678901"><button id="addBarcode" class="primary">Add</button></div>
@@ -49,6 +49,6 @@
 </main>
 <footer>Stock Reorder App — GitHub Pages test version</footer>
 <script src="products.js"></script>
-<script src="app.js?v=3"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>

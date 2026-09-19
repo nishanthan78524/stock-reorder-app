@@ -57,3 +57,14 @@ If direct file sharing is unavailable, the PDF is downloaded and WhatsApp opens 
 The Reorder List now uses a prominent red trash-can delete icon instead of a text Remove button.
 
 If GitHub Pages appears to show the previous version, hard-refresh the page (Ctrl+F5 on Windows) or open it in a private/incognito window.
+
+
+## Continuous barcode scanning
+
+The camera now stays running after a successful scan. Staff can move from one product to the next without pressing Start Camera again.
+
+- Start Camera once.
+- Scan product after product; each new barcode is added automatically.
+- The same barcode is not repeatedly added while it remains in front of the camera.
+- Move the barcode out of view before scanning that same product again.
+- Press Stop Camera when finished.

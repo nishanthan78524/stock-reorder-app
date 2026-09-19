@@ -1,5 +1,5 @@
 const state={reorder:JSON.parse(localStorage.getItem("reorderList")||"{}"),whatsapp:localStorage.getItem("whatsappNumber")||""};
-let reader=null,running=false;
+let reader=null,running=false,lastDetectedBarcode="",unlockTimer=null;
 const $=id=>document.getElementById(id);
 function save(){localStorage.setItem("reorderList",JSON.stringify(state.reorder))}
 function findProduct(b){return PRODUCTS.find(p=>p.barcode===String(b).trim())}
@@ -8,7 +8,7 @@ function addProduct(b){b=String(b).trim();if(!b)return;const p=findProduct(b);if
 function changeQty(b,d){if(!state.reorder[b])return;state.reorder[b].qty+=d;if(state.reorder[b].qty<=0)delete state.reorder[b];save();render()}
 function removeItem(b){delete state.reorder[b];save();render()}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
-function render(){const items=Object.values(state.reorder);$("itemCount").textContent=items.reduce((a,x)=>a+x.qty,0);$("emptyState").style.display=items.length?"none":"block";$("reorderList").innerHTML=items.map(x=>`<div class="product"><div class="product-name">${esc(x.name)}</div><div class="barcode">Barcode: ${esc(x.barcode)}</div><div class="qty"><button class="secondary" onclick="changeQty('${x.barcode}',-1)">−</button><span>${x.qty}</span><button class="secondary" onclick="changeQty('${x.barcode}',1)">+</button><button class="delete-item" onclick="removeItem('${x.barcode}')" aria-label="Delete ${esc(x.name)}" title="Delete item"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M5 7h14M8 7l1 14h6l1-14M10 11v6M14 11v6"/></svg></button></div></div>`).join("")}
+function render(){const items=Object.values(state.reorder);$("itemCount").textContent=items.reduce((a,x)=>a+x.qty,0);$("emptyState").style.display=items.length?"none":"block";$("reorderList").innerHTML=items.map(x=>`<div class="product"><div class="product-name">${esc(x.name)}</div><div class="barcode">Barcode: ${esc(x.barcode)}</div><div class="qty"><button class="secondary" onclick="changeQty('${x.barcode}',-1)">−</button><span>${x.qty}</span><button class="secondary" onclick="changeQty('${x.barcode}',1)">+</button><button class="delete-item" onclick="removeItem('${x.barcode}')" aria-label="Delete ${esc(x.name)}" title="Delete item"><img src="assets/delete-icon.svg" alt="" class="delete-icon"></button></div></div>`).join("")}
 async function sendWhatsApp(){
 const items=Object.values(state.reorder);
 if(!items.length){msg("Your reorder list is empty.","error");return}
@@ -68,6 +68,73 @@ msg("Could not create PDF: "+(e.message||"unknown error"),"error");
 
 function saveSettings(){state.whatsapp=$("whatsappNumber").value.trim();localStorage.setItem("whatsappNumber",state.whatsapp);$("settingsStatus").textContent="Settings saved."}
 function search(){const q=$("searchProduct").value.toLowerCase().trim();$("productResults").innerHTML=q?PRODUCTS.filter(p=>p.name.toLowerCase().includes(q)||p.barcode.includes(q)).slice(0,20).map(p=>`<div class="product search"><div><div class="product-name">${esc(p.name)}</div><div class="barcode">${p.barcode}</div></div><button class="primary" onclick="addProduct('${p.barcode}')">Add</button></div>`).join(""):""}
-async function startCamera(){try{if(!window.isSecureContext){msg("Camera requires HTTPS. GitHub Pages uses HTTPS.","error");return}if(!window.ZXing){msg("Scanner library failed to load.","error");return}stopCamera();reader=new ZXing.BrowserMultiFormatReader();$("cameraStatus").textContent="Requesting camera permission...";$("startCamera").disabled=true;$("stopCamera").disabled=false;$("scanLine").style.display="block";const ds=await reader.listVideoInputDevices();if(!ds.length)throw Error("No camera found.");let id=ds[ds.length-1].deviceId;const rear=ds.find(d=>/back|rear|environment/i.test(d.label));if(rear)id=rear.deviceId;running=true;$("cameraStatus").textContent="Camera running — point at a barcode.";reader.decodeFromVideoDevice(id,"video",(result)=>{if(result&&running){addProduct(result.getText());stopCamera()}})}catch(e){console.error(e);msg(e.message||"Camera error. Check permission.","error");stopCamera()}}
-function stopCamera(){running=false;if(reader){try{reader.reset()}catch(e){}reader=null}const v=$("video");if(v.srcObject){v.srcObject.getTracks().forEach(t=>t.stop());v.srcObject=null}$("startCamera").disabled=false;$("stopCamera").disabled=true;$("scanLine").style.display="none";$("cameraStatus").textContent="Camera is stopped."}
+async function startCamera(){
+  try{
+    if(!window.isSecureContext){msg("Camera requires HTTPS. GitHub Pages uses HTTPS.","error");return}
+    if(!window.ZXing){msg("Scanner library failed to load.","error");return}
+
+    stopCamera();
+    reader=new ZXing.BrowserMultiFormatReader();
+    $("cameraStatus").textContent="Requesting camera permission...";
+    $("startCamera").disabled=true;
+    $("stopCamera").disabled=false;
+    $("scanLine").style.display="block";
+
+    const ds=await reader.listVideoInputDevices();
+    if(!ds.length)throw Error("No camera found.");
+    let id=ds[ds.length-1].deviceId;
+    const rear=ds.find(d=>/back|rear|environment/i.test(d.label));
+    if(rear)id=rear.deviceId;
+
+    running=true;
+    lastDetectedBarcode="";
+    clearTimeout(unlockTimer);
+    $("cameraStatus").textContent="Camera running — scan continuously. Press Stop Camera when finished.";
+
+    reader.decodeFromVideoDevice(id,"video",(result)=>{
+      if(!running)return;
+
+      if(result){
+        const barcode=String(result.getText()).trim();
+        if(!barcode)return;
+
+        // Add each barcode once while it remains in view. The lock is cleared
+        // after the barcode disappears, allowing the same product to be scanned again.
+        if(barcode!==lastDetectedBarcode){
+          lastDetectedBarcode=barcode;
+          addProduct(barcode);
+        }
+
+        clearTimeout(unlockTimer);
+      }else{
+        scheduleBarcodeUnlock();
+      }
+    });
+  }catch(e){
+    console.error(e);
+    msg(e.message||"Camera error. Check permission.","error");
+    stopCamera();
+  }
+}
+
+function scheduleBarcodeUnlock(){
+  clearTimeout(unlockTimer);
+  unlockTimer=setTimeout(()=>{
+    lastDetectedBarcode="";
+  },800);
+}
+
+function stopCamera(){
+  running=false;
+  clearTimeout(unlockTimer);
+  lastDetectedBarcode="";
+  if(reader){try{reader.reset()}catch(e){}reader=null}
+  const v=$("video");
+  if(v.srcObject){v.srcObject.getTracks().forEach(t=>t.stop());v.srcObject=null}
+  $("startCamera").disabled=false;
+  $("stopCamera").disabled=true;
+  $("scanLine").style.display="none";
+  $("cameraStatus").textContent="Camera is stopped.";
+}
+
 $("startCamera").onclick=startCamera;$("stopCamera").onclick=stopCamera;$("addBarcode").onclick=()=>{addProduct($("barcodeInput").value);$("barcodeInput").value=""};$("barcodeInput").onkeydown=e=>{if(e.key==="Enter")$("addBarcode").click()};$("clearList").onclick=()=>{if(Object.keys(state.reorder).length&&confirm("Clear the entire reorder list?")){state.reorder={};save();render()}};$("sendWhatsApp").onclick=sendWhatsApp;$("saveSettings").onclick=saveSettings;$("searchProduct").oninput=search;$("whatsappNumber").value=state.whatsapp;render();
