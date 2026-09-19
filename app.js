@@ -9,7 +9,63 @@ function changeQty(b,d){if(!state.reorder[b])return;state.reorder[b].qty+=d;if(s
 function removeItem(b){delete state.reorder[b];save();render()}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
 function render(){const items=Object.values(state.reorder);$("itemCount").textContent=items.reduce((a,x)=>a+x.qty,0);$("emptyState").style.display=items.length?"none":"block";$("reorderList").innerHTML=items.map(x=>`<div class="product"><div class="product-name">${esc(x.name)}</div><div class="barcode">Barcode: ${esc(x.barcode)}</div><div class="qty"><button class="secondary" onclick="changeQty('${x.barcode}',-1)">−</button><span>${x.qty}</span><button class="secondary" onclick="changeQty('${x.barcode}',1)">+</button><button class="remove" onclick="removeItem('${x.barcode}')">Remove</button></div></div>`).join("")}
-function sendWhatsApp(){const items=Object.values(state.reorder);if(!items.length){msg("Your reorder list is empty.","error");return}const n=state.whatsapp.replace(/\D/g,"");if(!n){msg("Save a WhatsApp destination number first.","error");$("whatsappNumber").focus();return}let text="STOCK REORDER LIST\n\n";items.forEach((x,i)=>text+=`${i+1}. ${x.name} - Qty: ${x.qty} - Barcode: ${x.barcode}\n`);window.open("https://wa.me/"+n+"?text="+encodeURIComponent(text),"_blank")}
+async function sendWhatsApp(){
+const items=Object.values(state.reorder);
+if(!items.length){msg("Your reorder list is empty.","error");return}
+const n=state.whatsapp.replace(/\D/g,"");
+if(!n){msg("Save a WhatsApp destination number first.","error");$("whatsappNumber").focus();return}
+
+try{
+const {jsPDF}=window.jspdf;
+const doc=new jsPDF({unit:"mm",format:"a4"});
+const now=new Date();
+doc.setFontSize(18);
+doc.text("STOCK REORDER LIST",14,18);
+doc.setFontSize(10);
+doc.text("Generated: "+now.toLocaleString("en-GB"),14,25);
+
+const rows=items.map((x,i)=>[String(i+1),x.name,String(x.qty),x.barcode]);
+doc.autoTable({
+startY:31,
+head:[["No.","Product","Quantity","Barcode"]],
+body:rows,
+theme:"grid",
+styles:{fontSize:9,cellPadding:3},
+headStyles:{fontStyle:"bold"},
+columnStyles:{0:{cellWidth:12},1:{cellWidth:85},2:{cellWidth:25},3:{cellWidth:50}}
+});
+
+const blob=doc.output("blob");
+const filename="Stock-Reorder-"+now.toISOString().slice(0,10)+".pdf";
+const file=new File([blob],filename,{type:"application/pdf"});
+
+if(navigator.canShare && navigator.canShare({files:[file]})){
+await navigator.share({
+title:"Stock Reorder List",
+text:"Stock reorder list",
+files:[file]
+});
+return;
+}
+
+const url=URL.createObjectURL(blob);
+const a=document.createElement("a");
+a.href=url;
+a.download=filename;
+document.body.appendChild(a);
+a.click();
+a.remove();
+setTimeout(()=>URL.revokeObjectURL(url),10000);
+
+const text="Stock reorder PDF has been generated. Please attach the downloaded PDF.";
+window.open("https://wa.me/"+n+"?text="+encodeURIComponent(text),"_blank");
+msg("PDF downloaded. Attach it in WhatsApp.","success");
+}catch(e){
+console.error(e);
+msg("Could not create PDF: "+(e.message||"unknown error"),"error");
+}
+}
+
 function saveSettings(){state.whatsapp=$("whatsappNumber").value.trim();localStorage.setItem("whatsappNumber",state.whatsapp);$("settingsStatus").textContent="Settings saved."}
 function search(){const q=$("searchProduct").value.toLowerCase().trim();$("productResults").innerHTML=q?PRODUCTS.filter(p=>p.name.toLowerCase().includes(q)||p.barcode.includes(q)).slice(0,20).map(p=>`<div class="product search"><div><div class="product-name">${esc(p.name)}</div><div class="barcode">${p.barcode}</div></div><button class="primary" onclick="addProduct('${p.barcode}')">Add</button></div>`).join(""):""}
 async function startCamera(){try{if(!window.isSecureContext){msg("Camera requires HTTPS. GitHub Pages uses HTTPS.","error");return}if(!window.ZXing){msg("Scanner library failed to load.","error");return}stopCamera();reader=new ZXing.BrowserMultiFormatReader();$("cameraStatus").textContent="Requesting camera permission...";$("startCamera").disabled=true;$("stopCamera").disabled=false;$("scanLine").style.display="block";const ds=await reader.listVideoInputDevices();if(!ds.length)throw Error("No camera found.");let id=ds[ds.length-1].deviceId;const rear=ds.find(d=>/back|rear|environment/i.test(d.label));if(rear)id=rear.deviceId;running=true;$("cameraStatus").textContent="Camera running — point at a barcode.";reader.decodeFromVideoDevice(id,"video",(result)=>{if(result&&running){addProduct(result.getText());stopCamera()}})}catch(e){console.error(e);msg(e.message||"Camera error. Check permission.","error");stopCamera()}}

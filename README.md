@@ -37,3 +37,17 @@ Set the WhatsApp destination in Settings using international format without + or
 Camera scanning uses ZXing and requires HTTPS. GitHub Pages provides HTTPS.
 
 The current product database is only sample data. For your 4,000+ products, the next version should connect to a proper database/API.
+
+
+## Added in this version
+
+### Lynx Gold
+Product: Lynx Gold
+Barcode: 8720181369599
+
+### PDF reorder list
+The WhatsApp button creates an A4 PDF with a table containing:
+No. | Product | Quantity | Barcode
+
+On supported phones, the browser share sheet can send the PDF directly to WhatsApp.
+If direct file sharing is unavailable, the PDF is downloaded and WhatsApp opens with a message; attach the downloaded PDF manually.
