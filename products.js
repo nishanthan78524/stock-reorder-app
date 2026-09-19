@@ -1,6 +1,7 @@
 // Sample database. Add your real products here later.
 const PRODUCTS=[
 {barcode:"5012345678901",name:"Coca-Cola Original Taste 500ml"},
+{barcode:"8720181369599",name:"Lynx Gold"},
 {barcode:"5012345678902",name:"Pepsi 500ml"},
 {barcode:"5012345678903",name:"Monster Energy Original 500ml"},
 {barcode:"5012345678904",name:"Walkers Ready Salted Crisps 65g"},
