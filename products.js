@@ -22,6 +22,10 @@ const DEPARTMENTS = [
 // file from the Product Database section: barcode,name,price,department
 const PRODUCTS = [
   { barcode: "5012345678901", name: "Coca-Cola Original Taste 500ml", price: 1.45, dept: "Soft Drinks" },
+  { barcode: "5022822220249", name: "Maximum LED 1000W", price: 2.99, dept: "Household" },
+  { barcode: "8700216332767", name: "Daz All in one PODs", price: 3.29, dept: "Toiletries" },
+  { barcode: "5000431027572", name: "L&B Blue Original", price:15.95, dept: "Tobacco" },
+  { barcode: "5053990188642", name: "Pringles Original", price:2.99, dept: "Crisps & Snacks" },
   { barcode: "5012345678902", name: "Pepsi 500ml", price: 1.35, dept: "Soft Drinks" },
   { barcode: "5012345678903", name: "Monster Energy Original 500ml", price: 1.79, dept: "Soft Drinks" },
   { barcode: "5012345678904", name: "Walkers Ready Salted Crisps 65g", price: 1.25, dept: "Crisps & Snacks" },
