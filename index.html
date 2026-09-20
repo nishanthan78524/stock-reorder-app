@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta name="theme-color" content="#0f172a">
 <title>Stock Reorder App</title>
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=6">
 <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
@@ -22,27 +22,64 @@
 <label for="barcodeInput">Enter barcode manually</label>
 <div class="manual"><input id="barcodeInput" inputmode="numeric" placeholder="e.g. 5012345678901"><button id="addBarcode" class="primary">Add</button></div>
 <p id="message" class="message"></p>
+
+<div id="newProduct" class="new-product">
+  <h3>New product details</h3>
+  <p class="small">This barcode isn't in the database yet. Enter its details once and it is saved for next time.</p>
+  <label for="npBarcode">Barcode</label>
+  <input id="npBarcode" inputmode="numeric">
+  <label for="npName">Product name</label>
+  <input id="npName" placeholder="e.g. Coca-Cola Original 500ml">
+  <label for="npPrice">Selling price</label>
+  <input id="npPrice" inputmode="decimal" placeholder="e.g. 1.45">
+  <label for="npDept">Department</label>
+  <select id="npDept"></select>
+  <div class="actions">
+    <button id="npSave" class="primary">Save and add to list</button>
+    <button id="npCancel" class="secondary">Cancel</button>
+  </div>
+</div>
+<button id="addManualProduct" class="link-btn">+ Add a product to the database</button>
 </section>
 
 <section class="card">
 <div class="title"><h2>Reorder List</h2><span id="itemCount" class="badge">0</span></div>
 <div id="emptyState" class="empty">No products added yet.</div>
+<div id="listTotals" class="list-totals"><span id="totalLines"></span><span id="totalValue"></span></div>
 <div id="reorderList"></div>
-<div class="actions"><button id="clearList" class="danger">Clear List</button><button id="sendWhatsApp" class="whatsapp">Create PDF & Send via WhatsApp</button></div>
+<div class="actions"><button id="clearList" class="danger">Clear List</button><button id="sendWhatsApp" class="whatsapp">Create PDF &amp; Send via WhatsApp</button></div>
 </section>
 
 <section class="card">
 <h2>Settings</h2>
+<label for="shopName">Shop name (shown on the PDF)</label>
+<input id="shopName" placeholder="e.g. High Street Convenience">
 <label for="whatsappNumber">WhatsApp destination number</label>
 <input id="whatsappNumber" inputmode="tel" placeholder="447700900123">
 <small>Use international format without + or spaces.</small>
+<label for="currencySymbol">Currency symbol</label>
+<input id="currencySymbol" maxlength="3" placeholder="£">
 <button id="saveSettings" class="primary full">Save Settings</button>
 <p id="settingsStatus" class="status"></p>
 </section>
 
+<section class="card">
+<h2>Product Database</h2>
+<p id="dbCount" class="small"></p>
+<input id="searchProduct" type="search" placeholder="Search product or barcode">
+<select id="filterDept"></select>
+<div id="productResults"></div>
+<div class="db-tools">
+  <label for="importDb" class="file-label">Import CSV</label>
+  <input id="importDb" type="file" accept=".csv,text/csv">
+  <button id="exportDb" class="secondary">Export CSV</button>
+</div>
+<small>CSV columns: barcode, name, price, department. A header row is optional.</small>
+<p id="dbStatus" class="status"></p>
+</section>
 </main>
-<footer>Stock Reorder App — GitHub Pages test version</footer>
-<script src="products.js"></script>
-<script src="app.js?v=5"></script>
+<footer>Stock Reorder App — department-wise version</footer>
+<script src="products.js?v=6"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>
